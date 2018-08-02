@@ -334,7 +334,7 @@ func (b *Bulk) makeParam(val DataValue, col columnStruct) (res param, err error)
 		case int64:
 			intvalue = val
 		default:
-			err = fmt.Errorf("mssql: invalid type for int column")
+			err = fmt.Errorf("mssql: invalid type for int column: %T", val)
 			return
 		}
 
@@ -361,7 +361,7 @@ func (b *Bulk) makeParam(val DataValue, col columnStruct) (res param, err error)
 		case int64:
 			floatvalue = float64(val)
 		default:
-			err = fmt.Errorf("mssql: invalid type for float column: %s", val)
+			err = fmt.Errorf("mssql: invalid type for float column: %T %s", val, val)
 			return
 		}
 
@@ -380,7 +380,7 @@ func (b *Bulk) makeParam(val DataValue, col columnStruct) (res param, err error)
 		case []byte:
 			res.buffer = val
 		default:
-			err = fmt.Errorf("mssql: invalid type for nvarchar column: %s", val)
+			err = fmt.Errorf("mssql: invalid type for nvarchar column: %T %s", val, val)
 			return
 		}
 		res.ti.Size = len(res.buffer)
@@ -392,14 +392,14 @@ func (b *Bulk) makeParam(val DataValue, col columnStruct) (res param, err error)
 		case []byte:
 			res.buffer = val
 		default:
-			err = fmt.Errorf("mssql: invalid type for varchar column: %s", val)
+			err = fmt.Errorf("mssql: invalid type for varchar column: %T %s", val, val)
 			return
 		}
 		res.ti.Size = len(res.buffer)
 
 	case typeBit, typeBitN:
 		if reflect.TypeOf(val).Kind() != reflect.Bool {
-			err = fmt.Errorf("mssql: invalid type for bit column: %s", val)
+			err = fmt.Errorf("mssql: invalid type for bit column: %T %s", val, val)
 			return
 		}
 		res.ti.TypeId = typeBitN
@@ -414,7 +414,7 @@ func (b *Bulk) makeParam(val DataValue, col columnStruct) (res param, err error)
 			res.buffer = encodeDateTime2(val, int(col.ti.Scale))
 			res.ti.Size = len(res.buffer)
 		default:
-			err = fmt.Errorf("mssql: invalid type for datetime2 column: %s", val)
+			err = fmt.Errorf("mssql: invalid type for datetime2 column: %T %s", val, val)
 			return
 		}
 	case typeDateTimeOffsetN:
@@ -424,7 +424,7 @@ func (b *Bulk) makeParam(val DataValue, col columnStruct) (res param, err error)
 			res.ti.Size = len(res.buffer)
 
 		default:
-			err = fmt.Errorf("mssql: invalid type for datetimeoffset column: %s", val)
+			err = fmt.Errorf("mssql: invalid type for datetimeoffset column: %T %s", val, val)
 			return
 		}
 	case typeDateN:
@@ -433,7 +433,7 @@ func (b *Bulk) makeParam(val DataValue, col columnStruct) (res param, err error)
 			res.buffer = encodeDate(val)
 			res.ti.Size = len(res.buffer)
 		default:
-			err = fmt.Errorf("mssql: invalid type for date column: %s", val)
+			err = fmt.Errorf("mssql: invalid type for date column: %T %s", val, val)
 			return
 		}
 	case typeDateTime, typeDateTimeN, typeDateTim4:
@@ -446,11 +446,11 @@ func (b *Bulk) makeParam(val DataValue, col columnStruct) (res param, err error)
 				res.buffer = encodeDateTime(val)
 				res.ti.Size = len(res.buffer)
 			} else {
-				err = fmt.Errorf("mssql: invalid size of column")
+				err = fmt.Errorf("mssql: invalid size of column %d", col.ti.Size)
 			}
 
 		default:
-			err = fmt.Errorf("mssql: invalid type for datetime column: %s", val)
+			err = fmt.Errorf("mssql: invalid type for datetime column: %T %s", val, val)
 		}
 
 	// case typeMoney, typeMoney4, typeMoneyN:
@@ -476,7 +476,7 @@ func (b *Bulk) makeParam(val DataValue, col columnStruct) (res param, err error)
 				return res, fmt.Errorf("bulk: unable to convert string to float: %v", err)
 			}
 		default:
-			return res, fmt.Errorf("unknown value for decimal: %#v", v)
+			return res, fmt.Errorf("unknown value for decimal: %T %#v", v, v)
 		}
 
 		perc := col.ti.Prec
@@ -527,7 +527,7 @@ func (b *Bulk) makeParam(val DataValue, col columnStruct) (res param, err error)
 			res.ti.Size = len(val)
 			res.buffer = val
 		default:
-			err = fmt.Errorf("mssql: invalid type for Binary column: %s", val)
+			err = fmt.Errorf("mssql: invalid type for Binary column: %T %s", val, val)
 			return
 		}
 	case typeGuid:
@@ -536,7 +536,7 @@ func (b *Bulk) makeParam(val DataValue, col columnStruct) (res param, err error)
 			res.ti.Size = len(val)
 			res.buffer = val
 		default:
-			err = fmt.Errorf("mssql: invalid type for Guid column: %s", val)
+			err = fmt.Errorf("mssql: invalid type for Guid column: %T %s", val, val)
 			return
 		}
 
