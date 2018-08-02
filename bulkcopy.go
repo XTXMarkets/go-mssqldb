@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -487,46 +486,42 @@ func (b *Bulk) makeParam(val DataValue, col columnStruct) (res param, err error)
 
 		// case typeMoney, typeMoney4, typeMoneyN:
 	case typeDecimal, typeDecimalN, typeNumeric, typeNumericN:
-		var value float64
+		prec := col.ti.Prec
+		scale := col.ti.Scale
+		var dec Decimal
 		switch v := val.(type) {
 		case int:
-			value = float64(v)
+			dec = Int64ToDecimalScale(int64(v), 0)
 		case int8:
-			value = float64(v)
+			dec = Int64ToDecimalScale(int64(v), 0)
 		case int16:
-			value = float64(v)
+			dec = Int64ToDecimalScale(int64(v), 0)
 		case int32:
-			value = float64(v)
+			dec = Int64ToDecimalScale(int64(v), 0)
 		case int64:
-			value = float64(v)
+			dec = Int64ToDecimalScale(int64(v), 0)
 		case float32:
-			value = float64(v)
+			dec, err = Float64ToDecimalScale(float64(v), scale)
 		case float64:
-			value = v
+			dec, err = Float64ToDecimalScale(float64(v), scale)
 		case string:
-			if value, err = strconv.ParseFloat(v, 64); err != nil {
-				return res, fmt.Errorf("bulk: unable to convert string to float: %v", err)
-			}
+			dec, err = StringToDecimal(v)
 		default:
 			return res, fmt.Errorf("unknown value for decimal: %T %#v", v, v)
 		}
 
-		perc := col.ti.Prec
-		scale := col.ti.Scale
-		var dec Decimal
-		dec, err = Float64ToDecimalScale(value, scale)
 		if err != nil {
 			return res, err
 		}
-		dec.prec = perc
+		dec.prec = prec
 
 		var length byte
 		switch {
-		case perc <= 9:
+		case prec <= 9:
 			length = 4
-		case perc <= 19:
+		case prec <= 19:
 			length = 8
-		case perc <= 28:
+		case prec <= 28:
 			length = 12
 		default:
 			length = 16
@@ -536,7 +531,7 @@ func (b *Bulk) makeParam(val DataValue, col columnStruct) (res param, err error)
 		// first byte length written by typeInfo.writer
 		res.ti.Size = int(length) + 1
 		// second byte sign
-		if value < 0 {
+		if !dec.positive {
 			buf[0] = 0
 		} else {
 			buf[0] = 1
