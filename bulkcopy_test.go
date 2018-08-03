@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"math"
 	"reflect"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -21,51 +20,53 @@ func TestBulkcopy(t *testing.T) {
 	}
 	type testValue struct {
 		colname string
-		val     interface{}
+		in, out interface{}
 	}
 
 	tableName := "#table_test"
 	geom, _ := hex.DecodeString("E6100000010C00000000000034400000000000004440")
+	uid := []byte{0x6F, 0x96, 0x19, 0xFF, 0x8B, 0x86, 0xD0, 0x11, 0xB4, 0x2D, 0x00, 0xC0, 0x4F, 0xC9, 0x64, 0xFF}
 	testValues := []testValue{
 
-		{"test_nvarchar", "ab©ĎéⒻghïjklmnopqЯ☀tuvwxyz"},
-		{"test_varchar", "abcdefg"},
-		{"test_char", "abcdefg   "},
-		{"test_nchar", "abcdefg   "},
-		{"test_text", "abcdefg"},
-		{"test_ntext", "abcdefg"},
-		{"test_float", 1234.56},
-		{"test_floatn", 1234.56},
-		{"test_real", 1234.56},
-		{"test_realn", 1234.56},
-		{"test_bit", true},
-		{"test_bitn", nil},
-		{"test_smalldatetime", time.Date(2010, 11, 12, 13, 14, 0, 0, time.UTC)},
-		{"test_smalldatetimen", time.Date(2010, 11, 12, 13, 14, 0, 0, time.UTC)},
-		{"test_datetime", time.Date(2010, 11, 12, 13, 14, 15, 120000000, time.UTC)},
-		{"test_datetimen", time.Date(2010, 11, 12, 13, 14, 15, 120000000, time.UTC)},
-		{"test_datetimen_1", time.Date(4010, 11, 12, 13, 14, 15, 120000000, time.UTC)},
-		{"test_datetime2_1", "2010-11-12 13:14:15Z"},
-		{"test_datetime2_3", time.Date(2010, 11, 12, 13, 14, 15, 123000000, time.UTC)},
-		{"test_datetime2_7", time.Date(2010, 11, 12, 13, 14, 15, 123000000, time.UTC)},
-		{"test_datetimeoffset_7", time.Date(2010, 11, 12, 13, 14, 15, 123000000, time.UTC)},
-		{"test_date", time.Date(2010, 11, 12, 00, 00, 00, 0, time.UTC)},
-		{"test_date_2", "2015-06-07"},
-		{"test_tinyint", 255},
-		{"test_smallint", 32767},
-		{"test_smallintn", nil},
-		{"test_int", 2147483647},
-		{"test_bigint", 9223372036854775807},
-		{"test_bigintn", nil},
-		{"test_geom", geom},
-		{"test_uniqueidentifier", []byte{0x6F, 0x96, 0x19, 0xFF, 0x8B, 0x86, 0xD0, 0x11, 0xB4, 0x2D, 0x00, 0xC0, 0x4F, 0xC9, 0x64, 0xFF}},
-		// {"test_smallmoney", 1234.56},
-		// {"test_money", 1234.56},
-		{"test_decimal_18_0", 1234.0001},
-		{"test_decimal_9_2", -1234.560001},
-		{"test_decimal_20_0", 1234.0001},
-		{"test_decimal_20_0_2", math.MinInt64},
-		{"test_numeric_30_10", "66666666666666666666.6666666666"},
+		{"test_nvarchar", "ab©ĎéⒻghïjklmnopqЯ☀tuvwxyz", nil},
+		{"test_varchar", "abcdefg", nil},
+		{"test_char", "abcdefg   ", nil},
+		{"test_nchar", "abcdefg   ", nil},
+		{"test_text", "abcdefg", nil},
+		{"test_ntext", "abcdefg", nil},
+		{"test_float", 1234.56, nil},
+		{"test_floatn", 1234.56, nil},
+		{"test_real", 1234.56, nil},
+		{"test_realn", 1234.56, nil},
+		{"test_bit", true, nil},
+		{"test_bitn", nil, nil},
+		{"test_smalldatetime", time.Date(2010, 11, 12, 13, 14, 0, 0, time.UTC), nil},
+		{"test_smalldatetimen", time.Date(2010, 11, 12, 13, 14, 0, 0, time.UTC), nil},
+		{"test_datetime", time.Date(2010, 11, 12, 13, 14, 15, 120000000, time.UTC), nil},
+		{"test_datetimen", time.Date(2010, 11, 12, 13, 14, 15, 120000000, time.UTC), nil},
+		{"test_datetimen_1", time.Date(4010, 11, 12, 13, 14, 15, 120000000, time.UTC), nil},
+		{"test_datetime2_1", "2010-11-12 13:14:15Z", time.Date(2010, 11, 12, 13, 14, 15, 0, time.UTC)},
+		{"test_datetime2_3", time.Date(2010, 11, 12, 13, 14, 15, 123000000, time.UTC), nil},
+		{"test_datetime2_7", time.Date(2010, 11, 12, 13, 14, 15, 123000000, time.UTC), nil},
+		{"test_datetimeoffset_7", time.Date(2010, 11, 12, 13, 14, 15, 123000000, time.UTC), nil},
+		{"test_date", time.Date(2010, 11, 12, 0, 0, 0, 0, time.UTC), nil},
+		{"test_date_2", "2015-06-07", time.Date(2015, 6, 7, 0, 0, 0, 0, time.UTC)},
+		{"test_tinyint", 255, nil},
+		{"test_smallint", 32767, nil},
+		{"test_smallintn", nil, nil},
+		{"test_int", 2147483647, nil},
+		{"test_bigint", 9223372036854775807, nil},
+		{"test_bigintn", nil, nil},
+		{"test_geom", geom, string(geom)},
+		{"test_uniqueidentifier", uid, string(uid)},
+		// {"test_smallmoney", 1234.56, nil},
+		// {"test_money", 1234.56, nil},
+		{"test_decimal_18_0", 1234.0001, "1234"},
+		{"test_decimal_9_2", -1234.560001, "-1234.56"},
+		{"test_decimal_20_0", 1234, "1234"},
+		{"test_decimal_20_0_2", math.MinInt64, "-9223372036854775808"},
+		{"test_decimal_20_10", "1234.1", "1234.1000000000"},
+		{"test_numeric_30_10", "66666666666666666666.6666666666", nil},
 	}
 
 	columns := make([]string, len(testValues))
@@ -75,7 +76,7 @@ func TestBulkcopy(t *testing.T) {
 
 	values := make([]interface{}, len(testValues))
 	for i, val := range testValues {
-		values[i] = val.val
+		values[i] = val.in
 	}
 
 	pool := open(t)
@@ -147,12 +148,16 @@ func TestBulkcopy(t *testing.T) {
 			t.Fatal(err)
 		}
 		for i, c := range testValues {
-			if !compareValue(container[i], c.val) {
+			expected := c.out
+			if expected == nil {
+				expected = c.in
+			}
+			if !compareValue(container[i], expected) {
 				v := container[i]
 				if s, ok := v.([]uint8); ok {
 					v = string(s)
 				}
-				t.Errorf("columns %s : expected: %T %v, got: %T %v\n", c.colname, c.val, c.val, container[i], v)
+				t.Errorf("columns %s : expected: %T %v, got: %T %v\n", c.colname, expected, expected, container[i], v)
 			}
 		}
 	}
@@ -162,42 +167,19 @@ func TestBulkcopy(t *testing.T) {
 }
 
 func compareValue(a interface{}, expected interface{}) bool {
+	if got, ok := a.([]uint8); ok {
+		a = string(got)
+	}
+
 	switch expected := expected.(type) {
 	case int:
-		if got, ok := a.([]uint8); ok {
-			v, err := strconv.ParseInt(string(got), 10, 64)
-			if err != nil {
-				return false
-			}
-			return int64(expected) == v
-		}
 		return int64(expected) == a
 	case int32:
 		return int64(expected) == a
 	case int64:
 		return expected == a
 	case float64:
-		if got, ok := a.([]uint8); ok {
-			var nf sql.NullFloat64
-			nf.Scan(got)
-			a = nf.Float64
-		}
 		return math.Abs(expected-a.(float64)) < 0.0001
-	case string:
-		if got, ok := a.(time.Time); ok {
-			e, err := time.ParseInLocation(sqlTimeFormat, expected, time.UTC)
-			if err != nil {
-				e, err = time.ParseInLocation(sqlDateFormat, expected, time.UTC)
-				if err != nil {
-					return false
-				}
-			}
-			return e.Equal(got)
-		}
-		if got, ok := a.([]uint8); ok {
-			return expected == string(got)
-		}
-		return expected == a
 	case time.Time:
 		if got, ok := a.(time.Time); ok {
 			_, ez := expected.Zone()
@@ -252,6 +234,7 @@ func setupTable(ctx context.Context, t *testing.T, conn *sql.Conn, tableName str
 	[test_decimal_9_2] [decimal](9, 2) NULL,
 	[test_decimal_20_0] [decimal](20, 0) NULL,
 	[test_decimal_20_0_2] [decimal](20, 0) NULL,
+	[test_decimal_20_10] [decimal](20, 10) NULL,
 	[test_numeric_30_10] [decimal](30, 10) NULL,
  CONSTRAINT [PK_` + tableName + `_id] PRIMARY KEY CLUSTERED 
 (
